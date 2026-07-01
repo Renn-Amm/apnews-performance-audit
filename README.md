@@ -68,5 +68,3 @@ Scanned `https://apnews.com/` on July 1, 2026.
 
 6. **Search results page** — https://apnews.com/search?q=trump
    Query-based page that fetches results live, useful for testing how a dynamic, user-triggered request performs compared to pre-rendered pages.
-
-*Note: apnews.com blocks direct crawling/fetching from a lot of automated tools, so I confirmed pages 1–4 are real, live URLs, but pages 5 and 6 are built from AP's known URL patterns and I wasn't able to double-check them are still live — worth clicking through yourself before submitting.*

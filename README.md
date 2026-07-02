@@ -5,6 +5,19 @@
 **Name:** AP News (The Associated Press)
 **URL:** https://apnews.com/
 
+## Why this site
+
+AP News is a large, non-tech news publisher. A PageSpeed Insights scan of the homepage came back with a Mobile Performance score of 28/100 and a failed Core Web Vitals assessment, so there's a genuine problem to investigate here, not something I'm assuming.
+
+It also covers a wide mix of content and features:
+- Static content — long-form articles, photo captions, bylines
+- Dynamic content — homepage top-story carousel, topic/hub pages that update as new stories publish
+- Images — heavy use of AP wire photography throughout, often large hero images per article
+- Video — embedded AP video clips on many articles
+- Data fetching — live search, topic hub feeds, an interactive weekly rankings page (AP Top 25 poll)
+- Forms — newsletter sign-up
+- Third parties/ads — ad networks, trackers, and analytics scripts loaded on nearly every page
+
 ## Pages the audit will focus on
 
 1. **Homepage** — https://apnews.com/

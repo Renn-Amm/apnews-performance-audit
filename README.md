@@ -5,50 +5,6 @@
 **Name:** AP News (The Associated Press)
 **URL:** https://apnews.com/
 
-It also covers a wide mix of content and features:
-- Static content — long-form articles, photo captions, bylines
-- Dynamic content — homepage top-story carousel, topic/hub pages that update as new stories publish
-- Images — heavy use of AP wire photography throughout, often large hero images per article
-- Video — embedded AP video clips on many articles
-- Data fetching — live search, topic hub feeds, an interactive weekly rankings page (AP Top 25 poll)
-- Forms — newsletter sign-up
-- Third parties/ads — ad networks, trackers, and analytics scripts loaded on nearly every page
-
-## PageSpeed Insights baseline (homepage, mobile)
-
-Scanned `https://apnews.com/` on July 1, 2026.
-
-**Scores**
-- Performance: 28/100 (red)
-- Accessibility: 75/100
-- Best Practices: 77/100
-- SEO: 85/100
-
-**Core Web Vitals (field data, 28-day real users)**
-- LCP: 2.9s — needs improvement
-- INP: 177ms — good
-- CLS: 0.06 — good
-- FCP: 2.0s — needs improvement
-- TTFB: 0.2s — good
-- Overall assessment: Failed
-
-**Lab data (simulated mobile, slow 4G)**
-- FCP: 6.5s
-- LCP: 20.3s
-- Total Blocking Time: 1,900ms
-- Speed Index: 15.6s
-- CLS: 0.001
-
-**Biggest flagged issues**
-- Render-blocking requests — ~650ms possible savings
-- Inefficient cache lifetimes — ~1,354 KiB possible savings
-- Unoptimized image delivery — ~3,162 KiB possible savings
-- Unused JavaScript — ~2,184 KiB possible savings
-- Unused CSS — ~137 KiB possible savings
-- Total page payload: 10,510 KiB
-- More than 4 preconnect connections found (warning)
-- Accessibility gaps: missing alt text on images, buttons/links without accessible names, insufficient color contrast, touch targets too small
-
 ## Pages the audit will focus on
 
 1. **Homepage** — https://apnews.com/

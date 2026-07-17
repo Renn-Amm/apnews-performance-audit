@@ -1,65 +1,90 @@
 # Bundles
 
+Real data from the Lighthouse treemap and Coverage tab on apnews.com.
+
 ## JavaScript
 
-How it's bundled: single bundle style for AP's own code, not route or component splitting. The Coverage tab shows a file literally named All.min.ff2ba6899876ee78a1e76c66d6a06a13.gz.js, a combined, hashed, gzipped bundle. The Sources tree confirms this too, apnews.com's own footprint is almost nothing (just the index page and manifest.json), everything else loads from third-party domains.
+How it's bundled: this isn't a single app bundle the way the personal project's Next.js app is, it's dominated by a very large stack of independently loaded third party scripts. The Lighthouse treemap shows a total JS payload of 5.7 MiB, more than double the personal project's 2.8 MiB, and it's overwhelmingly ad tech and video infrastructure:
 
-Is this the right decision: for AP's own code, a single bundle is a defensible, simple choice, but it's completely overshadowed by the real story here: the JS payload is dominated by third-party ad tech and engagement tools, not AP's own code. The Lighthouse treemap shows a 5.7 MiB total JS payload split across dozens of vendors: Google reCAPTCHA (373.1 KiB), Primis video ads (346.9 KiB plus another 337.4 KiB plus 251.6 KiB in separate chunks), Google's IMA video ad SDK (259.0 KiB x2 plus 151.4 KiB), Google Publisher Tag (195.1 KiB), Prebid/PubFig header bidding (193.9 + 192.7 KiB), Viafoura (184.6 KiB just for its main script), GTM (177.6 KiB), Confiant ad-fraud protection (168.1 KiB), a second GA4 property (147.9 KiB), a quiz widget from Riverdrop (138.5 KiB), OneTrust (135.1 KiB), JW Player's ad bidding module (116.5 KiB), Bounce Exchange (116.1 KiB), and Amazon's ad tech (90.8 KiB). AP's own bundle isn't even large enough to place in the top rows of the treemap.
+* gstatic.com/recaptcha (Google reCAPTCHA): 373.1 KiB, 6 percent
+* live.primis.tech (video ad platform), three separate files: prebidVid, liveVideo.php/vpaidManager, and an HLS.js copy, adding up to roughly 936 KiB combined
+* imasdk.googleapis.com (Google's IMA video ad SDK), loaded twice, 259.0 KiB each, 518 KiB combined for the same library
+* s.ntv.io, loaded twice, 258.9 KiB each
+* securepubads.g.doubleclick.net (Google Publisher Tag / programmatic ads): 195.1 KiB
+* a.pub.network (prebid header bidding): 193.9 KiB plus a separate pubfig.engine.js at 192.7 KiB
+* cdn.viafoura.net (comments): 184.6 KiB
+* googletagmanager.com/gtm.js (GTM-KT7RHVG): 177.6 KiB
+* cdn.confiant-integrations.net (ad quality/security monitoring): 168.1 KiB
+* googletagmanager.com/gtag/js?id=G-CW1LSOSXPK: 147.9 KiB, a third distinct Google Analytics property beyond what showed up in the Network tab
+* client.riverdrop.com (quiz widget): 138.5 KiB
+* c.amazon-adsystem.com/apstag.js (Amazon's ad marketplace): 90.8 KiB
+* assets.bouncexchange.com (exit-intent/conversion marketing): appears twice, 116.1 KiB and 41.4 KiB
+* www.dianomi.com (native content recommendation/advertising)
+* cds.connatix.com (another video ad platform)
 
-Is there unused JS: yes, confirmed with real Coverage tab numbers. Some specifics:
-* All.min.ff2ba6899876ee78a1e76c66d6a06a13.gz.js (AP's own bundle): 455,855 bytes total, 376,668 unused, 82.6 percent
-* gstatic.com/recaptcha/releases/.../recaptcha__en.js: 891,388 bytes total, 589,216 unused, 66.1 percent
-* ssl.p.jwpcdn.com provider.hlsjs.js: 588,024 bytes total, 417,626 unused, 71 percent
-* ssl.p.jwpcdn.com bidding.js: 473,362 bytes total, 367,243 unused, 77.6 percent
-* cdn.viafoura.net vf-v2.js: 679,044 bytes total, 334,519 unused, 49.3 percent
-* cdn.viafoura.net chunks/da.e386745...js: 145,043 bytes total, 133,605 unused, 92.1 percent
-* cdn.onesignal.com OneSignalSDK.page.es6.js: 140,682 bytes total, 100,089 unused, 71.1 percent
-* apcdp.apnews.com/script.js (AP's own): 141,197 bytes total, 74,985 unused, 53.1 percent
+Is this the right decision: there's no single "bundle" decision to evaluate the way there is for a first party app, this is a publisher site where the JS footprint is mostly an accumulation of ad tech and engagement vendors layered on over time. The real question isn't whether the bundling strategy is right, it's whether all of these vendors are still needed, several appear to overlap (Google's own ad stack, Amazon's, and a header bidding layer all doing similar jobs; two separate video ad SDKs, Primis and Connatix, both present).
 
-Source maps: not checked directly against a Lighthouse audit this time (that check was done for the personal project, not repeated here), but no .js.map files appeared anywhere in the Network or Sources tabs during this capture, so nothing suggests they're being shipped for the combined bundle either.
+Is there unused JS: yes, confirmed with the Coverage tab. Aggregate details:
+* recaptcha_en.js: 891,388 bytes total, 589,216 unused, 66.1 percent
+* ssl.p.jwpcdn.com/provider.hlsjs.js: 588,024 total, 417,626 unused, 71 percent
+* assets.apnews.com bundle: 455,855 total, 376,668 unused, 82.6 percent
+* jwpcdn bidding.js: 473,362 total, 367,243 unused, 77.6 percent
+* cdn.viafoura.net/vf-v2.js: 679,044 total, 334,519 unused, 49.3 percent
+* apcdp.apnews.com/script.js (AP's own): 141,197 total, 74,985 unused, 53.1 percent
+* hj2bd2l1dv.kameleoon.io/engine.js: 157,667 total, 65,260 unused, 41.4 percent
+
+Corrective finding: unlike the personal project where the single biggest unused-code offender was the app's own bundle, here it's almost entirely third party. reCAPTCHA alone ships 891 KB and two thirds of it goes unused on a page that (for most visitors) never triggers a CAPTCHA challenge.
+
+Bundle analysis: the app's own first party code (apcdp.apnews.com/script.js) is a small fraction of the total, about 141 KB out of 5.7 MiB. The real story is that this page is carrying at least four overlapping categories of third party tooling: video ad delivery (Primis, Connatix, Google IMA), display/header bidding ads (GPT, Prebid, Amazon), audience/engagement (Viafoura, Kameleoon, Riverdrop, BounceExchange, Dianomi), and infrastructure (GTM, OneSignal, Zephr, OneTrust, reCAPTCHA).
+
+Source maps: not checked directly on this pass, no .js.map files appeared in any of the captured Network views, consistent with the personal project's pattern of not shipping maps publicly.
 
 ## CSS
 
-How it's bundled: single bundle, same pattern as the JS. The Coverage and Network tabs both show a file named All.min.70c2eda7933b1b601140d901727ba769.gz.css, one combined stylesheet for the whole site, alongside separate smaller stylesheets pulled in by Viafoura's widget.
+How it's bundled: a combined, minified stylesheet (All.min.[hash].gz.css) plus a handful of Google Fonts stylesheets (Roboto, Merriweather, Poppins) and a date-stamped custom file (ap-custom-02-06-2026.min.css).
 
-Is this the right decision: not really, based on what the Coverage tab shows. A single combined CSS bundle only pays off if most pages actually use most of the rules in it, and that's clearly not happening here.
+Is this the right decision: the combined approach is reasonable for a content site like this, but the Coverage data below suggests it isn't scoped well.
 
-Is there unused CSS: yes, and it's severe.
-* All.min...gz.css (the main combined bundle): 801,002 bytes total, 705,570 unused, 88.1 percent
-* fonts.googleapis.com Roboto/Merriweather CSS: 23,373 bytes total, 23,373 unused, 100 percent, entirely wasted
-* fonts.googleapis.com Poppins CSS: 3,591 bytes total, 3,591 unused, 100 percent, also entirely wasted
-* cdn.viafoura.net 186.4146c4e5889380923a03.css: 94,262 bytes total, 91,579 unused, 97.2 percent
-* cdn.viafoura.net 0.e386745fa4c1fae7ff6e.css: 79,440 bytes total, 79,345 unused, 99.9 percent
-* cdn.viafoura.net 56.f82e03984f6d77c06501.css: 9,699 bytes total, 9,094 unused, 93.8 percent
+Is there unused CSS: yes, and severely in places.
+* The combined All.min.[hash].gz.css: 801,002 bytes total, 705,570 unused, 88.1 percent
+* Google Fonts CSS for Roboto/Merriweather: 23,373 bytes total, 23,373 unused, 100 percent
+* Google Fonts CSS for Poppins: 3,591 bytes total, 3,591 unused, 100 percent
+* cdn.viafoura.net's CSS: 79,440 total, 79,345 unused, 99.9 percent, and another Viafoura CSS file at 94,262 total, 91,579 unused, 97.2 percent
+
+Corrective finding: two entire Google Fonts stylesheets load and go 100 percent unused, and Viafoura's CSS is effectively all unused too. That's real, identifiable dead weight on every page load.
 
 ## Images
 
-Are images shipped in multiple sizes/formats: partially. Product/article images route through a resizing proxy at dims.apnews.com (URLs pass the original assets.apnews.com image through a "90/?url=..." wrapper), and width parameters are used (poster.jpg?width=720). But the format side is inconsistent, several images through that same proxy come back as plain jpeg rather than webp, so modern format delivery isn't applied uniformly.
+Are images shipped in multiple sizes/formats: partially. There's a real resizing proxy in front of assets.apnews.com (URLs go through what looks like an image resizing service returning webp), but the Img-filtered Network tab also shows plenty of plain jpeg still being served, including the video poster image. So it's a mix, not fully modernized the way the personal project's image pipeline is.
 
-Is this the right decision: the resizing part is good practice, the inconsistent format delivery (some webp, some plain jpeg through the same pipeline) is not, that's a real gap worth closing.
+Is this the right decision: the resizing proxy itself is good practice, but the inconsistency (some webp, some plain jpeg) means part of the image weight isn't getting the benefit.
 
-Is the full resolution file exposed: the proxy pattern (dims.apnews.com/...?url=https://assets.apnews.com/...) suggests the underlying assets.apnews.com host serves the original files directly, and the resizing/format logic is layered on top via the query parameter wrapper rather than baked into assets.apnews.com itself, which is the same general pattern as Corsair's Cloudinary setup, an unwrapped assets.apnews.com URL is likely to return the original.
+Is the full resolution file exposed: not confirmed on this pass, would need the same test as the personal project, request one of the resizing proxy URLs without its size/format parameters.
 
-## Third party resources
+## Third-party resources
 
-Confirmed real, from the Network tab, Sources tree, and a direct console query listing all 45 unique hostnames the page contacts:
+Full real list, combining the Network tab, Coverage tab, and a console script that listed every unique hostname that made a request:
 
-* Advertising and video ad tech: Google Publisher Tag/DoubleClick, Prebid and PubFig header bidding, Google's IMA video ad SDK, Primis and Sekindo, Connatix, NTV, Amazon's apstag.js, Confiant (ad-fraud protection), JW Player's own bidding module
-* Analytics and tag management: Google Tag Manager, two separate Google Analytics 4 properties, Parse.ly
-* Audience/identity/personalization: Viafoura (comments and engagement), Zephr (subscription/paywall), Kameleoon (A/B testing), Permutive, BlueConic, Bounce Exchange, Dianomi
-* Consent, accessibility, and notifications: OneTrust, Usablenet (accessibility overlay), OneSignal (push notifications), Google reCAPTCHA
-* Interactive content: a quiz widget from Riverdrop
-* Infrastructure: Statically and githack.com (third-party CDN/proxy services used for some assets)
+* Google: reCAPTCHA, Tag Manager (GTM-KT7RHVG), two separate gtag/GA4 properties, Fonts, IMA video ad SDK, Publisher Tag/DoubleClick, Amazon's ad system (apstag.js)
+* Video ads: Primis (live.primis.tech), Connatix (cd.connatix.com), JW Player plus its entitlements service (DRM/paywall for video) and bidding module
+* Prebid/header bidding: a.pub.network (prebid.js, pubfig.engine.js)
+* Ad quality monitoring: Confiant
+* Audience/CDP/personalization: Viafoura (comments), Kameleoon (A/B testing), Permutive (first-party audience data), BlueConic (customer data platform), Parse.ly (publisher analytics), Sailthru (ak.sail-horizon.com, email/marketing)
+* Identity/subscription: Zephr
+* Consent: OneTrust
+* Notifications: OneSignal
+* Interactive content: a quiz widget from client.riverdrop.com, a native content recommendation widget from Dianomi
+* Accessibility: a40.usablenet.com, an accessibility overlay/remediation service
+* A couple of domains that stood out as worth a second look: rawcdn.githack.com (a raw GitHub content CDN, unusual to see in a production ad/analytics stack) and html-load.cc plus a couple of similarly obfuscated-looking domains, consistent with ad tech vendors that intentionally use unbranded domains
 
-How are they loaded: based on the timelines across the captures, the large majority load up front, in the first several seconds, not deferred or lazy. GTM and the ad-tech stack in particular start immediately.
+How are they loaded: based on the timeline, most fire up front rather than being deferred, GTM in particular pulls in a large share of the rest.
 
-How much is each impacting load: the treemap gives real transfer size per script (see the JavaScript section above), and it's clear the video ad stack (Primis, IMA SDK, GPT, prebid) collectively accounts for more of the payload than any single other category, including AP's own code.
+How much is each impacting load: the treemap gives real transfer size per script (see JavaScript section above). reCAPTCHA and the Primis/IMA video ad stack are the two biggest individual contributors.
 
-Do any seem unnecessary: hard to call any of these truly unnecessary given this is an ad-supported publisher, advertising and engagement tools are the business model. But having two separate GA4 properties, and running both Prebid/PubFig and JW Player's own separate bidding module at the same time, looks like redundant tooling worth a second look. The 100 percent unused Google Fonts CSS (both the Roboto/Merriweather request and the separate Poppins request) is also a clear, no-tradeoffs waste.
+Do any seem unnecessary or overlapping: yes, more clearly than on the personal project. There are at least two competing video ad SDKs (Primis and Connatix) and multiple overlapping ad marketplaces (Google's stack, Amazon's, and Prebid's header bidding layer all running at once). Whether all of these are still active/needed is a real question for whoever manages ad operations, from the outside it looks like some of this could be consolidated.
 
 ## Bundle related corrective findings
 
-1. The main CSS bundle (All.min...gz.css, 801 KB) is 88.1 percent unused, a single combined stylesheet strategy that isn't paying off. See findings.md finding 12.
-2. The video ad tech stack (Primis, Google's IMA SDK, GPT, Prebid/PubFig, JW Player's bidding module) makes up a bigger share of the 5.7 MiB JS payload than AP's own code. See findings.md finding 13.
-3. Two separate Google Fonts CSS requests (Roboto/Merriweather and Poppins) are both 100 percent unused. See findings.md finding 14.
-4. Viafoura's CSS is close to entirely unused across three separate files (97.2 percent, 99.9 percent, and 93.8 percent unused). See findings.md finding 15.
+1. reCAPTCHA ships 891 KB with 66 percent unused on a page that doesn't typically challenge visitors with a CAPTCHA. See findings.md.
+2. Two entire Google Fonts CSS files (Roboto/Merriweather and Poppins) load and are 100 percent unused. See findings.md.
+3. The video ad and header bidding stack is duplicated across vendors (Primis and Connatix both providing video ad delivery, Google/Amazon/Prebid all running header bidding), inflating the JS payload well beyond what a single, consolidated setup would need.

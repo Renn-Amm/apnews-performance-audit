@@ -44,6 +44,10 @@ Real data in place, see networking.md. Short version: hard load is 185 requests 
 
 Real Coverage tab and Lighthouse treemap data in place, see bundles.md. Headline numbers: both JS and CSS use a single combined bundle strategy (files literally named All.min...js and All.min...css), the CSS bundle is 88.1 percent unused, and the 5.7 MiB JS payload is dominated by video advertising tech (Primis, Google's IMA SDK, Google Publisher Tag, Prebid/PubFig), not AP's own code. AP's own first-party footprint (outside that one combined bundle) is essentially just the index document and a manifest.json.
 
+## Rendering, Coverage detail, and rendering strategy
+
+See rendering.md. Real flame chart data shows the jank here is rendering/layout dominated on load (1,172 ms Rendering vs 1,092 ms Scripting in one recording) but scripting-dominated during section navigation. Scrolling is excessive and unexpected, five separate frames over 230ms each in one short scroll recording, up to 749ms during a nav click. Layers data shows JW Player creating multiple video/preview layer pairs even for off-screen videos, and a whole-viewport paint flash just from hovering the nav menu. Rendering strategy is server-rendered (Arc XP style), which gets content out fast but LCP still lags badly behind because of what's competing with it.
+
 ## Known bugs, not just performance issues
 
 * "Does not use HTTPS, 1 insecure request found" (Lighthouse Best Practices, desktop scan)

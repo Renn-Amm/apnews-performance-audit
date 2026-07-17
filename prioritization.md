@@ -19,14 +19,20 @@ Score = Reach times Pain times Ease. Higher score means fix it sooner. Because t
 | Finding | Reach | Pain | Ease | Score |
 |---|---|---|---|---|
 | Does not use HTTPS, 1 insecure request | 5 | 3 | 4 | 60 |
+| Critical CSS not inlined, contributing to render blocking | 5 | 3 | 3 | 45 |
 | Too many preconnect origins slowing connection setup | 5 | 2 | 5 | 50 |
 | LCP delayed by image delivery and render blocking | 5 | 5 | 2 | 50 |
+| Scrolling is excessively janky, five frames over 230ms in one short recording | 5 | 4 | 2 | 40 |
 | Main CSS bundle 88.1 percent unused | 5 | 3 | 3 | 45 |
+| JW Player creates video/preview layers eagerly instead of lazily on scroll into view | 4 | 3 | 3 | 36 |
 | Heavy JS blocking interactivity (TBT) | 5 | 4 | 2 | 40 |
 | Inefficient caching hurting repeat visits | 3 | 3 | 4 | 36 |
+| Section navigation causes stalls up to 749ms | 3 | 5 | 2 | 30 |
+| Page load jank is rendering/layout dominated, not scripting | 5 | 3 | 2 | 30 |
 | Video ad stack outweighs AP's own code | 4 | 4 | 2 | 32 |
 | Viafoura's CSS almost entirely unused | 4 | 2 | 4 | 32 |
 | Mobile lab LCP far worse than field LCP under throttling | 3 | 5 | 2 | 30 |
+| Nav hover triggers a whole-viewport paint flash | 4 | 2 | 3 | 24 |
 | Legacy JavaScript shipped unnecessarily | 5 | 1 | 5 | 25 |
 | Two Google Fonts CSS requests, 100 percent unused | 5 | 1 | 5 | 25 |
 | Accessibility gaps (alt text, contrast, unnamed controls) | 2 | 4 | 3 | 24 |
@@ -40,18 +46,24 @@ Score = Reach times Pain times Ease. Higher score means fix it sooner. Because t
 1. Fix the HTTPS/insecure request issue, highest score and a real security-adjacent bug, not just a performance nice-to-have
 2. Trim the preconnect list to only critical origins (tied with LCP fix below)
 3. Fix LCP delivery (preload, remove render blocking resources ahead of it)
-4. Split the main CSS bundle so pages stop loading 88 percent unused CSS
-5. Cut and defer JS to fix TBT
-6. Fix cache headers for static assets
-7. Reconsider whether the full video ad stack needs to load immediately on every page (tied with Viafoura's CSS below)
-8. Scope Viafoura's CSS loading instead of shipping the full set everywhere
-9. Re test LCP specifically under mobile throttling once the above are fixed
-10. Set a modern browserslist target to drop legacy JS (tied with the Google Fonts cleanup below)
-11. Remove the two fully unused Google Fonts CSS requests
-12. Fix accessibility gaps
-13. De duplicate shared JS across bundles (tied with the cookie audit below)
-14. Audit third-party vendors for unnecessary cookie usage
-15. Re check Speed Index under mobile throttling after everything else
-16. Treat the thin first-party footprint as a standing architectural constraint, not a one-time fix
+4. Split the main CSS bundle so pages stop loading 88 percent unused CSS (tied with critical CSS below)
+5. Inline critical CSS instead of relying entirely on the combined bundle
+6. Cut and defer JS to fix TBT (tied with the scrolling fix below)
+7. Fix the scroll jank, likely starting with whatever's creating the non-fast-scrollable region
+8. Fix cache headers for static assets
+9. Make JW Player lazy-init off-screen videos instead of setting up layers for all of them up front
+10. Reconsider whether the full video ad stack needs to load immediately on every page (tied with Viafoura's CSS below)
+11. Scope Viafoura's CSS loading instead of shipping the full set everywhere
+12. Re test LCP specifically under mobile throttling once the above are fixed
+13. Investigate the section-navigation stalls, likely the same rendering-cost root cause as the scroll jank
+14. Address the rendering/layout-dominated cost directly (DOM complexity, expensive CSS, layout thrashing), separate from just cutting JS
+15. Fix the nav hover paint flash by scoping the dropdown's repaint to itself
+16. Set a modern browserslist target to drop legacy JS (tied with the Google Fonts cleanup below)
+17. Remove the two fully unused Google Fonts CSS requests
+18. Fix accessibility gaps
+19. De duplicate shared JS across bundles (tied with the cookie audit below)
+20. Audit third-party vendors for unnecessary cookie usage
+21. Re check Speed Index under mobile throttling after everything else
+22. Treat the thin first-party footprint as a standing architectural constraint, not a one-time fix
 
 The HTTPS fix jumping to the top makes sense here, unlike most of the performance findings, this one is a binary correctness bug with an easy fix, not a matter of degree.
